@@ -16,10 +16,18 @@ class WeatherApp:
         self.root.configure(bg='black')
         self.root.geometry('480x320')
 
+        # Skry kurzor
+        self.root.config(cursor="none")
+
         # Súradnice - budú sa automaticky zistiť
         self.LATITUDE = None
         self.LONGITUDE = None
         self.CITY = "Loading..."
+
+        # Auto-rotate timer
+        self.auto_rotate_enabled = True
+        self.auto_rotate_interval = 10000  # 10 sekúnd
+        self.auto_rotate_timer = None
 
         # Aktuálna stránka
         self.current_page = 0
@@ -48,6 +56,9 @@ class WeatherApp:
 
         # Zobraz prvú stránku
         self.show_page(0)
+
+        # Spusti auto-rotate
+        self.start_auto_rotate()
 
     def get_location(self):
         """Automaticky zisti polohu pomocou IP geolokácie"""
@@ -82,6 +93,143 @@ class WeatherApp:
         print(f"Using fallback location: {self.CITY}")
         self.city_label.config(text=self.CITY)
         self.update_weather()
+
+    def manual_location_search(self):
+        """Otvorí dialóg pre manuálne zadanie mesta"""
+        # Zastaviť auto-rotate počas vyhľadávania
+        self.stop_auto_rotate()
+
+        # Vytvor popup okno
+        popup = tk.Toplevel(self.root)
+        popup.title("Search Location")
+        popup.geometry("400x200")
+        popup.configure(bg='#1a1a1a')
+        popup.attributes('-topmost', True)
+
+        # Nadpis
+        title = tk.Label(
+            popup,
+            text="Enter City Name",
+            font=('Arial', 14, 'bold'),
+            fg='white',
+            bg='#1a1a1a'
+        )
+        title.pack(pady=20)
+
+        # Entry field
+        entry = tk.Entry(
+            popup,
+            font=('Arial', 14),
+            width=25,
+            bg='#2a2a2a',
+            fg='white',
+            insertbackground='white'
+        )
+        entry.pack(pady=10)
+        entry.focus()
+
+        result_label = tk.Label(
+            popup,
+            text="",
+            font=('Arial', 10),
+            fg='yellow',
+            bg='#1a1a1a'
+        )
+        result_label.pack(pady=5)
+
+        def search_city():
+            city_name = entry.get().strip()
+            if not city_name:
+                result_label.config(text="Please enter a city name", fg='red')
+                return
+
+            result_label.config(text="Searching...", fg='yellow')
+            popup.update()
+
+            try:
+                # Použijeme Open-Meteo Geocoding API
+                url = "https://geocoding-api.open-meteo.com/v1/search"
+                params = {'name': city_name, 'count': 1,
+                          'language': 'en', 'format': 'json'}
+                response = requests.get(url, params=params, timeout=10)
+                data = response.json()
+
+                if 'results' in data and len(data['results']) > 0:
+                    result = data['results'][0]
+                    self.LATITUDE = result['latitude']
+                    self.LONGITUDE = result['longitude']
+
+                    # Formátuj názov mesta
+                    city = result['name']
+                    country = result.get('country', '')
+                    self.CITY = f"{city}, {country}"
+
+                    print(
+                        f"Location set to: {self.CITY} ({self.LATITUDE}, {self.LONGITUDE})")
+
+                    self.city_label.config(text=self.CITY)
+                    self.update_weather()
+
+                    popup.destroy()
+                    self.start_auto_rotate()
+                else:
+                    result_label.config(
+                        text="City not found. Try again.", fg='red')
+            except Exception as e:
+                print(f"Error searching city: {e}")
+                result_label.config(text="Search failed. Try again.", fg='red')
+
+        def cancel():
+            popup.destroy()
+            self.start_auto_rotate()
+
+        # Tlačidlá
+        btn_frame = tk.Frame(popup, bg='#1a1a1a')
+        btn_frame.pack(pady=15)
+
+        search_btn = tk.Button(
+            btn_frame,
+            text="Search",
+            font=('Arial', 12, 'bold'),
+            bg='#2a7a2a',
+            fg='white',
+            command=search_city,
+            width=10
+        )
+        search_btn.pack(side=tk.LEFT, padx=10)
+
+        cancel_btn = tk.Button(
+            btn_frame,
+            text="Cancel",
+            font=('Arial', 12, 'bold'),
+            bg='#7a2a2a',
+            fg='white',
+            command=cancel,
+            width=10
+        )
+        cancel_btn.pack(side=tk.LEFT, padx=10)
+
+        # Enter pre vyhľadanie
+        entry.bind('<Return>', lambda e: search_city())
+
+    def start_auto_rotate(self):
+        """Spusti automatické prepínanie stránok"""
+        if self.auto_rotate_enabled:
+            self.stop_auto_rotate()  # Zruš predchádzajúci timer
+            self.auto_rotate_timer = self.root.after(
+                self.auto_rotate_interval, self.auto_next_page)
+
+    def stop_auto_rotate(self):
+        """Zastaví automatické prepínanie"""
+        if self.auto_rotate_timer:
+            self.root.after_cancel(self.auto_rotate_timer)
+            self.auto_rotate_timer = None
+
+    def auto_next_page(self):
+        """Automaticky prejde na ďalšiu stránku v loope"""
+        next_page = (self.current_page + 1) % len(self.pages)
+        self.show_page(next_page)
+        self.start_auto_rotate()  # Naplánuj ďalšie prepnutie
 
     def create_pages(self):
         # Stránka 1: Aktuálne počasie
@@ -354,10 +502,25 @@ class WeatherApp:
             activebackground='#3a3a3a',
             activeforeground='white',
             relief=tk.FLAT,
-            command=self.prev_page,
+            command=self.manual_prev_page,
             width=3
         )
-        left_btn.pack(side=tk.LEFT, padx=10, pady=3)
+        left_btn.pack(side=tk.LEFT, padx=5, pady=3)
+
+        # Tlačidlo pre search (🔍)
+        search_btn = tk.Button(
+            nav_frame,
+            text="🔍",
+            font=('Arial', 12),
+            bg='#2a2a2a',
+            fg='white',
+            activebackground='#3a3a3a',
+            activeforeground='white',
+            relief=tk.FLAT,
+            command=self.manual_location_search,
+            width=3
+        )
+        search_btn.pack(side=tk.LEFT, padx=2, pady=3)
 
         # Indikátory stránok (v strede)
         self.page_indicators = []
@@ -385,18 +548,26 @@ class WeatherApp:
             activebackground='#3a3a3a',
             activeforeground='white',
             relief=tk.FLAT,
-            command=self.next_page,
+            command=self.manual_next_page,
             width=3
         )
-        right_btn.pack(side=tk.RIGHT, padx=10, pady=3)
+        right_btn.pack(side=tk.RIGHT, padx=5, pady=3)
 
-    def prev_page(self):
+    def manual_prev_page(self):
+        """Manuálne prepnutie na predchádzajúcu stránku"""
+        self.stop_auto_rotate()
         if self.current_page > 0:
             self.show_page(self.current_page - 1)
+        else:
+            self.show_page(len(self.pages) - 1)
+        self.start_auto_rotate()
 
-    def next_page(self):
-        if self.current_page < len(self.pages) - 1:
-            self.show_page(self.current_page + 1)
+    def manual_next_page(self):
+        """Manuálne prepnutie na ďalšiu stránku"""
+        self.stop_auto_rotate()
+        next_page = (self.current_page + 1) % len(self.pages)
+        self.show_page(next_page)
+        self.start_auto_rotate()
 
     def show_page(self, page_num):
         # Skry všetky stránky
