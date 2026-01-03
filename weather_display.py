@@ -325,21 +325,214 @@ class WeatherApp:
         self.show_page(next_page)
         self.start_auto_rotate()
 
+    def create_combined_weather_page(self, parent):
+        # ===== HORNÁ POLOVICA - Aktuálne počasie =====
+        top_half = tk.Frame(parent, bg='black', height=145)
+        top_half.pack(fill=tk.X)
+        top_half.pack_propagate(False)
+
+        # Hlavička
+        header = tk.Frame(top_half, bg='black')
+        header.pack(fill=tk.X, pady=2)
+
+        self.city_label = tk.Label(
+            header,
+            text="Loading...",
+            font=('Arial', 11, 'bold'),
+            fg='white',
+            bg='black'
+        )
+        self.city_label.pack()
+
+        self.current_date_label = tk.Label(
+            header,
+            text="",
+            font=('Arial', 8),
+            fg='lightgray',
+            bg='black'
+        )
+        self.current_date_label.pack()
+
+        # Hlavné info - teplota a ikona vedľa seba
+        main_frame = tk.Frame(top_half, bg='black')
+        main_frame.pack(expand=True)
+
+        # Ľavá strana - ikona a popis
+        left_side = tk.Frame(main_frame, bg='black')
+        left_side.pack(side=tk.LEFT, padx=10)
+
+        self.weather_icon_label = tk.Label(
+            left_side,
+            text="",
+            font=('Arial', 40),
+            fg='white',
+            bg='black'
+        )
+        self.weather_icon_label.pack()
+
+        self.current_desc_label = tk.Label(
+            left_side,
+            text="Loading...",
+            font=('Arial', 9),
+            fg='lightgray',
+            bg='black'
+        )
+        self.current_desc_label.pack()
+
+        # Pravá strana - teplota a detaily
+        right_side = tk.Frame(main_frame, bg='black')
+        right_side.pack(side=tk.LEFT, padx=10)
+
+        self.current_temp_label = tk.Label(
+            right_side,
+            text="--°",
+            font=('Arial', 42, 'bold'),
+            fg='white',
+            bg='black'
+        )
+        self.current_temp_label.pack()
+
+        # Detaily v 2 stĺpcoch
+        details_grid = tk.Frame(right_side, bg='black')
+        details_grid.pack()
+
+        self.current_feels_label = tk.Label(
+            details_grid,
+            text="Feels: --°",
+            font=('Arial', 7),
+            fg='orange',
+            bg='black'
+        )
+        self.current_feels_label.grid(row=0, column=0, padx=5, sticky='w')
+
+        self.current_humidity_label = tk.Label(
+            details_grid,
+            text="💧 --%",
+            font=('Arial', 7),
+            fg='cyan',
+            bg='black'
+        )
+        self.current_humidity_label.grid(row=0, column=1, padx=5, sticky='w')
+
+        self.current_wind_label = tk.Label(
+            details_grid,
+            text="💨 --",
+            font=('Arial', 7),
+            fg='lightblue',
+            bg='black'
+        )
+        self.current_wind_label.grid(row=1, column=0, padx=5, sticky='w')
+
+        self.current_pressure_label = tk.Label(
+            details_grid,
+            text="🌡 --",
+            font=('Arial', 7),
+            fg='yellow',
+            bg='black'
+        )
+        self.current_pressure_label.grid(row=1, column=1, padx=5, sticky='w')
+
+        # ===== DOLNÁ POLOVICA - 5-dňová predpoveď =====
+        bottom_half = tk.Frame(parent, bg='black', height=145)
+        bottom_half.pack(fill=tk.BOTH, expand=True)
+        bottom_half.pack_propagate(False)
+
+        # Nadpis
+        forecast_title = tk.Label(
+            bottom_half,
+            text="5-Day Forecast",
+            font=('Arial', 10, 'bold'),
+            fg='white',
+            bg='black'
+        )
+        forecast_title.pack(pady=2)
+
+        # Frame pre predpoveď
+        self.forecast_frame = tk.Frame(bottom_half, bg='black')
+        self.forecast_frame.pack(fill=tk.BOTH, expand=True, padx=3)
+
+        # Vytvor 5 stĺpcov pre dni
+        self.forecast_labels = []
+        for i in range(5):
+            day_frame = tk.Frame(self.forecast_frame,
+                                 bg='#1a1a1a', relief=tk.RAISED, borderwidth=1)
+            day_frame.grid(row=0, column=i, padx=1, pady=2, sticky='nsew')
+
+            # Deň
+            day_label = tk.Label(
+                day_frame,
+                text="---",
+                font=('Arial', 8, 'bold'),
+                fg='white',
+                bg='#1a1a1a'
+            )
+            day_label.pack(pady=1)
+
+            # Ikona
+            icon_label = tk.Label(
+                day_frame,
+                text="",
+                font=('Arial', 20),
+                fg='white',
+                bg='#1a1a1a'
+            )
+            icon_label.pack(pady=1)
+
+            # Max teplota
+            max_temp_label = tk.Label(
+                day_frame,
+                text="--°",
+                font=('Arial', 10, 'bold'),
+                fg='#ff6b6b',
+                bg='#1a1a1a'
+            )
+            max_temp_label.pack()
+
+            # Min teplota
+            min_temp_label = tk.Label(
+                day_frame,
+                text="--°",
+                font=('Arial', 8),
+                fg='#4dabf7',
+                bg='#1a1a1a'
+            )
+            min_temp_label.pack()
+
+            # Rain
+            rain_label = tk.Label(
+                day_frame,
+                text="💧 --%",
+                font=('Arial', 7),
+                fg='cyan',
+                bg='#1a1a1a'
+            )
+            rain_label.pack(pady=1)
+
+            self.forecast_labels.append({
+                'day': day_label,
+                'icon': icon_label,
+                'max_temp': max_temp_label,
+                'min_temp': min_temp_label,
+                'rain': rain_label
+            })
+
+        # Nakonfiguruj grid
+        for i in range(5):
+            self.forecast_frame.grid_columnconfigure(i, weight=1)
+
+        # Aktualizuj čas
+        self.update_current_time()
+
     def create_pages(self):
-        # Stránka 1: Aktuálne počasie
+        # Stránka 1: Aktuálne počasie + 5-dňová predpoveď
         page1 = tk.Frame(self.main_container, bg='black')
-        self.create_current_weather_page(page1)
+        self.create_combined_weather_page(page1)
         self.pages.append(page1)
 
-        # Stránka 2: 5-dňová predpoveď
+        # Stránka 2: Grafy
         page2 = tk.Frame(self.main_container, bg='black')
-        self.create_forecast_page(page2)
+        self.create_graphs_page(page2)
         self.pages.append(page2)
-
-        # Stránka 3: Grafy
-        page3 = tk.Frame(self.main_container, bg='black')
-        self.create_graphs_page(page3)
-        self.pages.append(page3)
 
     def create_current_weather_page(self, parent):
         # Hlavička
