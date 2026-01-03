@@ -26,8 +26,9 @@ class WeatherApp:
         self.pages = []
 
         # Hlavný container
-        self.main_container = tk.Frame(self.root, bg='black')
+        self.main_container = tk.Frame(self.root, bg='black', height=290)
         self.main_container.pack(fill=tk.BOTH, expand=True)
+        self.main_container.pack_propagate(False)
 
         # Vytvor stránky
         self.create_pages()
@@ -39,13 +40,8 @@ class WeatherApp:
         # Najprv získaj polohu, potom počasie
         self.get_location()
 
-        # Navigačné tlačidlá
+        # Navigačné tlačidlá (na spodku)
         self.create_navigation()
-
-        # Touch/Click eventy pre swipe
-        self.start_x = 0
-        self.root.bind('<Button-1>', self.on_touch_start)
-        self.root.bind('<B1-Motion>', self.on_touch_move)
 
         # ESC pre ukončenie
         self.root.bind('<Escape>', lambda e: self.root.quit())
@@ -56,7 +52,6 @@ class WeatherApp:
     def get_location(self):
         """Automaticky zisti polohu pomocou IP geolokácie"""
         try:
-            # Použijeme ip-api.com - zadarmo, bez API kľúča
             response = requests.get('http://ip-api.com/json/', timeout=10)
             data = response.json()
 
@@ -74,11 +69,9 @@ class WeatherApp:
                 # Teraz môžeme načítať počasie
                 self.update_weather()
             else:
-                # Fallback na Humenné
                 self.use_fallback_location()
         except Exception as e:
             print(f"Error getting location: {e}")
-            # Fallback na Humenné
             self.use_fallback_location()
 
     def use_fallback_location(self):
@@ -109,12 +102,12 @@ class WeatherApp:
     def create_current_weather_page(self, parent):
         # Hlavička
         header = tk.Frame(parent, bg='black')
-        header.pack(fill=tk.X, pady=5)
+        header.pack(fill=tk.X, pady=3)
 
         self.city_label = tk.Label(
             header,
-            text="Loading location...",
-            font=('Arial', 16, 'bold'),
+            text="Loading...",
+            font=('Arial', 13, 'bold'),
             fg='white',
             bg='black'
         )
@@ -123,7 +116,7 @@ class WeatherApp:
         self.current_date_label = tk.Label(
             header,
             text="",
-            font=('Arial', 11),
+            font=('Arial', 9),
             fg='lightgray',
             bg='black'
         )
@@ -136,7 +129,7 @@ class WeatherApp:
         self.weather_icon_label = tk.Label(
             main_frame,
             text="",
-            font=('Arial', 60),
+            font=('Arial', 50),
             fg='white',
             bg='black'
         )
@@ -145,7 +138,7 @@ class WeatherApp:
         self.current_temp_label = tk.Label(
             main_frame,
             text="--°",
-            font=('Arial', 72, 'bold'),
+            font=('Arial', 56, 'bold'),
             fg='white',
             bg='black'
         )
@@ -154,54 +147,57 @@ class WeatherApp:
         self.current_desc_label = tk.Label(
             main_frame,
             text="Loading...",
-            font=('Arial', 14),
+            font=('Arial', 12),
             fg='lightgray',
             bg='black'
         )
         self.current_desc_label.pack()
 
-        # Detaily
+        # Detaily - 2 riadky
         details_frame = tk.Frame(parent, bg='black')
-        details_frame.pack(fill=tk.X, pady=10)
+        details_frame.pack(fill=tk.X, pady=5)
 
-        details_grid = tk.Frame(details_frame, bg='black')
-        details_grid.pack()
+        row1 = tk.Frame(details_frame, bg='black')
+        row1.pack()
 
         self.current_humidity_label = tk.Label(
-            details_grid,
+            row1,
             text="💧 --%",
-            font=('Arial', 10),
+            font=('Arial', 9),
             fg='cyan',
             bg='black'
         )
-        self.current_humidity_label.grid(row=0, column=0, padx=10)
+        self.current_humidity_label.pack(side=tk.LEFT, padx=12)
 
         self.current_wind_label = tk.Label(
-            details_grid,
+            row1,
             text="💨 -- km/h",
-            font=('Arial', 10),
+            font=('Arial', 9),
             fg='lightblue',
             bg='black'
         )
-        self.current_wind_label.grid(row=0, column=1, padx=10)
+        self.current_wind_label.pack(side=tk.LEFT, padx=12)
+
+        row2 = tk.Frame(details_frame, bg='black')
+        row2.pack()
 
         self.current_pressure_label = tk.Label(
-            details_grid,
+            row2,
             text="🌡 -- hPa",
-            font=('Arial', 10),
+            font=('Arial', 9),
             fg='yellow',
             bg='black'
         )
-        self.current_pressure_label.grid(row=1, column=0, padx=10, pady=5)
+        self.current_pressure_label.pack(side=tk.LEFT, padx=12)
 
         self.current_feels_label = tk.Label(
-            details_grid,
+            row2,
             text="Feels: --°C",
-            font=('Arial', 10),
+            font=('Arial', 9),
             fg='orange',
             bg='black'
         )
-        self.current_feels_label.grid(row=1, column=1, padx=10, pady=5)
+        self.current_feels_label.pack(side=tk.LEFT, padx=12)
 
         # Aktualizuj čas
         self.update_current_time()
@@ -211,48 +207,48 @@ class WeatherApp:
         title = tk.Label(
             parent,
             text="5-Day Forecast",
-            font=('Arial', 16, 'bold'),
+            font=('Arial', 13, 'bold'),
             fg='white',
             bg='black'
         )
-        title.pack(pady=10)
+        title.pack(pady=5)
 
         # Frame pre predpoveď
         self.forecast_frame = tk.Frame(parent, bg='black')
-        self.forecast_frame.pack(fill=tk.BOTH, expand=True, padx=10)
+        self.forecast_frame.pack(fill=tk.BOTH, expand=True, padx=5)
 
         # Vytvor 5 stĺpcov pre dni
         self.forecast_labels = []
         for i in range(5):
             day_frame = tk.Frame(self.forecast_frame,
                                  bg='#1a1a1a', relief=tk.RAISED, borderwidth=1)
-            day_frame.grid(row=0, column=i, padx=3, pady=5, sticky='nsew')
+            day_frame.grid(row=0, column=i, padx=2, pady=5, sticky='nsew')
 
             # Deň
             day_label = tk.Label(
                 day_frame,
                 text="---",
-                font=('Arial', 10, 'bold'),
+                font=('Arial', 9, 'bold'),
                 fg='white',
                 bg='#1a1a1a'
             )
-            day_label.pack(pady=3)
+            day_label.pack(pady=2)
 
             # Ikona
             icon_label = tk.Label(
                 day_frame,
                 text="",
-                font=('Arial', 30),
+                font=('Arial', 28),
                 fg='white',
                 bg='#1a1a1a'
             )
-            icon_label.pack()
+            icon_label.pack(pady=2)
 
             # Max teplota
             max_temp_label = tk.Label(
                 day_frame,
                 text="--°",
-                font=('Arial', 12, 'bold'),
+                font=('Arial', 11, 'bold'),
                 fg='#ff6b6b',
                 bg='#1a1a1a'
             )
@@ -262,7 +258,7 @@ class WeatherApp:
             min_temp_label = tk.Label(
                 day_frame,
                 text="--°",
-                font=('Arial', 10),
+                font=('Arial', 9),
                 fg='#4dabf7',
                 bg='#1a1a1a'
             )
@@ -294,21 +290,21 @@ class WeatherApp:
         # Nadpis
         title = tk.Label(
             parent,
-            text="Temperature & Humidity Trends",
-            font=('Arial', 14, 'bold'),
+            text="24h Trends",
+            font=('Arial', 13, 'bold'),
             fg='white',
             bg='black'
         )
-        title.pack(pady=5)
+        title.pack(pady=3)
 
         # Canvas pre graf teploty
         temp_frame = tk.Frame(parent, bg='black')
-        temp_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        temp_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=3)
 
         temp_title = tk.Label(
             temp_frame,
-            text="Temperature (24h)",
-            font=('Arial', 11, 'bold'),
+            text="Temperature",
+            font=('Arial', 10, 'bold'),
             fg='#ff6b6b',
             bg='black'
         )
@@ -324,12 +320,12 @@ class WeatherApp:
 
         # Canvas pre graf vlhkosti
         humidity_frame = tk.Frame(parent, bg='black')
-        humidity_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
+        humidity_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=3)
 
         humidity_title = tk.Label(
             humidity_frame,
-            text="Humidity (24h)",
-            font=('Arial', 11, 'bold'),
+            text="Humidity",
+            font=('Arial', 10, 'bold'),
             fg='cyan',
             bg='black'
         )
@@ -346,22 +342,61 @@ class WeatherApp:
     def create_navigation(self):
         nav_frame = tk.Frame(self.root, bg='#1a1a1a', height=30)
         nav_frame.pack(side=tk.BOTTOM, fill=tk.X)
+        nav_frame.pack_propagate(False)
 
-        # Indikátory stránok
+        # Ľavá šípka
+        left_btn = tk.Button(
+            nav_frame,
+            text="◀",
+            font=('Arial', 14, 'bold'),
+            bg='#2a2a2a',
+            fg='white',
+            activebackground='#3a3a3a',
+            activeforeground='white',
+            relief=tk.FLAT,
+            command=self.prev_page,
+            width=3
+        )
+        left_btn.pack(side=tk.LEFT, padx=10, pady=3)
+
+        # Indikátory stránok (v strede)
         self.page_indicators = []
         indicator_frame = tk.Frame(nav_frame, bg='#1a1a1a')
-        indicator_frame.pack(expand=True)
+        indicator_frame.pack(side=tk.LEFT, expand=True)
 
         for i in range(len(self.pages)):
             dot = tk.Label(
                 indicator_frame,
                 text="●",
-                font=('Arial', 12),
+                font=('Arial', 10),
                 fg='gray',
                 bg='#1a1a1a'
             )
-            dot.pack(side=tk.LEFT, padx=5)
+            dot.pack(side=tk.LEFT, padx=4)
             self.page_indicators.append(dot)
+
+        # Pravá šípka
+        right_btn = tk.Button(
+            nav_frame,
+            text="▶",
+            font=('Arial', 14, 'bold'),
+            bg='#2a2a2a',
+            fg='white',
+            activebackground='#3a3a3a',
+            activeforeground='white',
+            relief=tk.FLAT,
+            command=self.next_page,
+            width=3
+        )
+        right_btn.pack(side=tk.RIGHT, padx=10, pady=3)
+
+    def prev_page(self):
+        if self.current_page > 0:
+            self.show_page(self.current_page - 1)
+
+    def next_page(self):
+        if self.current_page < len(self.pages) - 1:
+            self.show_page(self.current_page + 1)
 
     def show_page(self, page_num):
         # Skry všetky stránky
@@ -379,27 +414,9 @@ class WeatherApp:
             else:
                 dot.config(fg='gray')
 
-    def on_touch_start(self, event):
-        self.start_x = event.x
-
-    def on_touch_move(self, event):
-        delta = event.x - self.start_x
-
-        # Swipe vpravo (predchádzajúca stránka)
-        if delta > 100:
-            if self.current_page > 0:
-                self.show_page(self.current_page - 1)
-            self.start_x = event.x
-
-        # Swipe vľavo (ďalšia stránka)
-        elif delta < -100:
-            if self.current_page < len(self.pages) - 1:
-                self.show_page(self.current_page + 1)
-            self.start_x = event.x
-
     def update_current_time(self):
         now = datetime.now()
-        date_str = now.strftime("%A, %B %d")
+        date_str = now.strftime("%A, %b %d")
         time_str = now.strftime("%H:%M:%S")
         self.current_date_label.config(text=f"{date_str}  {time_str}")
         self.root.after(1000, self.update_current_time)
@@ -407,65 +424,32 @@ class WeatherApp:
     def get_weather_icon(self, weather_code):
         """Vráti emoji ikonu podľa WMO weather code"""
         icons = {
-            0: "☀️",   # Clear sky
-            1: "🌤️",   # Mainly clear
-            2: "⛅",   # Partly cloudy
-            3: "☁️",   # Overcast
-            45: "🌫️",  # Foggy
-            48: "🌫️",  # Rime fog
-            51: "🌦️",  # Light drizzle
-            53: "🌦️",  # Moderate drizzle
-            55: "🌧️",  # Dense drizzle
-            61: "🌧️",  # Slight rain
-            63: "🌧️",  # Moderate rain
-            65: "🌧️",  # Heavy rain
-            71: "🌨️",  # Slight snow
-            73: "🌨️",  # Moderate snow
-            75: "❄️",   # Heavy snow
-            77: "🌨️",  # Snow grains
-            80: "🌦️",  # Slight rain showers
-            81: "🌧️",  # Moderate rain showers
-            82: "⛈️",   # Violent rain showers
-            85: "🌨️",  # Slight snow showers
-            86: "❄️",   # Heavy snow showers
-            95: "⛈️",   # Thunderstorm
-            96: "⛈️",   # Thunderstorm with hail
-            99: "⛈️"    # Severe thunderstorm
+            0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+            45: "🌫️", 48: "🌫️",
+            51: "🌦️", 53: "🌦️", 55: "🌧️",
+            61: "🌧️", 63: "🌧️", 65: "🌧️",
+            71: "🌨️", 73: "🌨️", 75: "❄️", 77: "🌨️",
+            80: "🌦️", 81: "🌧️", 82: "⛈️",
+            85: "🌨️", 86: "❄️",
+            95: "⛈️", 96: "⛈️", 99: "⛈️"
         }
         return icons.get(weather_code, "🌡️")
 
     def get_weather_description(self, weather_code):
         """Prevedie WMO weather code na popis"""
         descriptions = {
-            0: "Clear sky",
-            1: "Mainly clear",
-            2: "Partly cloudy",
-            3: "Overcast",
-            45: "Foggy",
-            48: "Rime fog",
-            51: "Light drizzle",
-            53: "Moderate drizzle",
-            55: "Dense drizzle",
-            61: "Slight rain",
-            63: "Moderate rain",
-            65: "Heavy rain",
-            71: "Slight snow",
-            73: "Moderate snow",
-            75: "Heavy snow",
-            77: "Snow grains",
-            80: "Rain showers",
-            81: "Moderate showers",
-            82: "Heavy showers",
-            85: "Snow showers",
-            86: "Heavy snow showers",
-            95: "Thunderstorm",
-            96: "Thunderstorm + hail",
-            99: "Severe thunderstorm"
+            0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+            45: "Foggy", 48: "Rime fog",
+            51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle",
+            61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain",
+            71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow", 77: "Snow grains",
+            80: "Rain showers", 81: "Moderate showers", 82: "Heavy showers",
+            85: "Snow showers", 86: "Heavy snow showers",
+            95: "Thunderstorm", 96: "Thunderstorm + hail", 99: "Severe thunderstorm"
         }
         return descriptions.get(weather_code, "Unknown")
 
     def get_weather(self):
-        # Ak ešte nemáme súradnice, počkaj
         if self.LATITUDE is None or self.LONGITUDE is None:
             return None
 
@@ -545,27 +529,12 @@ class WeatherApp:
     def update_graphs(self, data):
         hourly = data['hourly']
 
-        # Zobraz len posledných 24 hodín
         temps = hourly['temperature_2m'][:24]
         humidity = hourly['relative_humidity_2m'][:24]
 
-        # Graf teploty
-        self.draw_graph(
-            self.temp_canvas,
-            temps,
-            '#ff6b6b',
-            min(temps) - 2,
-            max(temps) + 2
-        )
-
-        # Graf vlhkosti
-        self.draw_graph(
-            self.humidity_canvas,
-            humidity,
-            'cyan',
-            0,
-            100
-        )
+        self.draw_graph(self.temp_canvas, temps, '#ff6b6b',
+                        min(temps) - 2, max(temps) + 2)
+        self.draw_graph(self.humidity_canvas, humidity, 'cyan', 0, 100)
 
     def draw_graph(self, canvas, data, color, min_val, max_val):
         canvas.delete('all')
@@ -574,7 +543,7 @@ class WeatherApp:
         height = canvas.winfo_height()
 
         if width <= 1:
-            width = 440
+            width = 450
         if height <= 1:
             height = 100
 
@@ -585,7 +554,6 @@ class WeatherApp:
         if len(data) < 2:
             return
 
-        # Vypočítaj body
         points = []
         for i, value in enumerate(data):
             x = padding + (i / (len(data) - 1)) * graph_width
@@ -594,28 +562,13 @@ class WeatherApp:
             y = height - padding - (normalized * graph_height)
             points.extend([x, y])
 
-        # Nakresli čiaru
         if len(points) >= 4:
             canvas.create_line(points, fill=color, width=2, smooth=True)
 
-        # Pridaj min/max hodnoty
-        canvas.create_text(
-            padding + 5,
-            padding + 5,
-            text=f"{max_val:.0f}",
-            fill=color,
-            font=('Arial', 8),
-            anchor='nw'
-        )
-
-        canvas.create_text(
-            padding + 5,
-            height - padding - 5,
-            text=f"{min_val:.0f}",
-            fill=color,
-            font=('Arial', 8),
-            anchor='sw'
-        )
+        canvas.create_text(padding + 5, padding + 5,
+                           text=f"{max_val:.0f}", fill=color, font=('Arial', 8), anchor='nw')
+        canvas.create_text(padding + 5, height - padding - 5,
+                           text=f"{min_val:.0f}", fill=color, font=('Arial', 8), anchor='sw')
 
 
 if __name__ == "__main__":
