@@ -106,57 +106,60 @@ class WeatherApp:
         title = tk.Label(
             search_page,
             text="Search Location",
-            font=('Arial', 16, 'bold'),
+            font=('Arial', 14, 'bold'),
             fg='white',
             bg='black'
         )
-        title.pack(pady=10)
+        title.pack(pady=5)
 
         # Entry field s textom
         entry_frame = tk.Frame(search_page, bg='black')
-        entry_frame.pack(pady=10)
+        entry_frame.pack(pady=5)
 
         entry_var = tk.StringVar()
         entry_display = tk.Label(
             entry_frame,
             textvariable=entry_var,
-            font=('Arial', 14),
-            width=25,
-            height=2,
+            font=('Arial', 12),
+            width=30,
+            height=1,
             bg='#2a2a2a',
             fg='white',
             relief=tk.SUNKEN,
             anchor='w',
-            padx=10
+            padx=5
         )
         entry_display.pack()
 
         result_label = tk.Label(
             search_page,
             text="",
-            font=('Arial', 10),
+            font=('Arial', 9),
             fg='yellow',
             bg='black'
         )
-        result_label.pack(pady=5)
+        result_label.pack(pady=2)
 
         # Virtuálna klávesnica
         keyboard_frame = tk.Frame(search_page, bg='black')
-        keyboard_frame.pack(pady=10)
+        keyboard_frame.pack(pady=5)
 
-        # Rozloženie klávesnice
+        # Rozloženie klávesnice - všetky písmená a číslice
         keyboard_layout = [
+            ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
             ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
             ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-            ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+            ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '-', ',']
         ]
 
         def key_press(key):
             current = entry_var.get()
             if key == '⌫':
                 entry_var.set(current[:-1])
-            elif key == 'Space':
+            elif key == 'SPACE':
                 entry_var.set(current + ' ')
+            elif key == 'CLEAR':
+                entry_var.set('')
             else:
                 entry_var.set(current + key.lower())
 
@@ -166,38 +169,65 @@ class WeatherApp:
             row_frame.pack()
 
             for key in row:
-                btn_width = 4 if key != '⌫' else 5
                 btn = tk.Button(
                     row_frame,
                     text=key,
-                    font=('Arial', 10, 'bold'),
-                    width=btn_width,
-                    height=2,
+                    font=('Arial', 9, 'bold'),
+                    width=3,
+                    height=1,
                     bg='#2a2a2a',
                     fg='white',
                     activebackground='#3a3a3a',
                     relief=tk.RAISED,
                     command=lambda k=key: key_press(k)
                 )
-                btn.pack(side=tk.LEFT, padx=2, pady=2)
+                btn.pack(side=tk.LEFT, padx=1, pady=1)
 
-        # Space bar
-        space_frame = tk.Frame(keyboard_frame, bg='black')
-        space_frame.pack()
+        # Spodný riadok - Space, Backspace, Clear
+        bottom_row = tk.Frame(keyboard_frame, bg='black')
+        bottom_row.pack()
+
+        backspace_btn = tk.Button(
+            bottom_row,
+            text='⌫',
+            font=('Arial', 9, 'bold'),
+            width=6,
+            height=1,
+            bg='#7a2a2a',
+            fg='white',
+            activebackground='#8a3a3a',
+            relief=tk.RAISED,
+            command=lambda: key_press('⌫')
+        )
+        backspace_btn.pack(side=tk.LEFT, padx=1, pady=1)
 
         space_btn = tk.Button(
-            space_frame,
-            text='Space',
-            font=('Arial', 10, 'bold'),
-            width=30,
-            height=2,
+            bottom_row,
+            text='SPACE',
+            font=('Arial', 9, 'bold'),
+            width=18,
+            height=1,
             bg='#2a2a2a',
             fg='white',
             activebackground='#3a3a3a',
             relief=tk.RAISED,
-            command=lambda: key_press('Space')
+            command=lambda: key_press('SPACE')
         )
-        space_btn.pack(pady=2)
+        space_btn.pack(side=tk.LEFT, padx=1, pady=1)
+
+        clear_btn = tk.Button(
+            bottom_row,
+            text='CLEAR',
+            font=('Arial', 9, 'bold'),
+            width=6,
+            height=1,
+            bg='#7a2a2a',
+            fg='white',
+            activebackground='#8a3a3a',
+            relief=tk.RAISED,
+            command=lambda: key_press('CLEAR')
+        )
+        clear_btn.pack(side=tk.LEFT, padx=1, pady=1)
 
         def search_city():
             city_name = entry_var.get().strip()
@@ -245,31 +275,31 @@ class WeatherApp:
 
         # Tlačidlá Search a Cancel
         btn_frame = tk.Frame(search_page, bg='black')
-        btn_frame.pack(pady=10)
-
-        search_btn = tk.Button(
-            btn_frame,
-            text="Search",
-            font=('Arial', 12, 'bold'),
-            bg='#2a7a2a',
-            fg='white',
-            width=12,
-            height=2,
-            command=search_city
-        )
-        search_btn.pack(side=tk.LEFT, padx=10)
+        btn_frame.pack(pady=5)
 
         cancel_btn = tk.Button(
             btn_frame,
-            text="Cancel",
-            font=('Arial', 12, 'bold'),
+            text="✖ CANCEL",
+            font=('Arial', 11, 'bold'),
             bg='#7a2a2a',
             fg='white',
-            width=12,
+            width=15,
             height=2,
             command=close_search
         )
-        cancel_btn.pack(side=tk.LEFT, padx=10)
+        cancel_btn.pack(side=tk.LEFT, padx=5)
+
+        search_btn = tk.Button(
+            btn_frame,
+            text="✓ SEARCH",
+            font=('Arial', 11, 'bold'),
+            bg='#2a7a2a',
+            fg='white',
+            width=15,
+            height=2,
+            command=search_city
+        )
+        search_btn.pack(side=tk.LEFT, padx=5)
 
         # Skry aktuálnu stránku a zobraz search
         for page in self.pages:
