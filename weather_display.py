@@ -95,59 +95,120 @@ class WeatherApp:
         self.update_weather()
 
     def manual_location_search(self):
-        """Otvorí dialóg pre manuálne zadanie mesta"""
+        """Fullscreen stránka pre vyhľadávanie mesta"""
         # Zastaviť auto-rotate počas vyhľadávania
         self.stop_auto_rotate()
 
-        # Vytvor popup okno
-        popup = tk.Toplevel(self.root)
-        popup.title("Search Location")
-        popup.geometry("400x200")
-        popup.configure(bg='#1a1a1a')
-        popup.attributes('-topmost', True)
+        # Vytvor fullscreen search page
+        search_page = tk.Frame(self.main_container, bg='black')
 
         # Nadpis
         title = tk.Label(
-            popup,
-            text="Enter City Name",
-            font=('Arial', 14, 'bold'),
+            search_page,
+            text="Search Location",
+            font=('Arial', 16, 'bold'),
             fg='white',
-            bg='#1a1a1a'
+            bg='black'
         )
-        title.pack(pady=20)
+        title.pack(pady=10)
 
-        # Entry field
-        entry = tk.Entry(
-            popup,
+        # Entry field s textom
+        entry_frame = tk.Frame(search_page, bg='black')
+        entry_frame.pack(pady=10)
+
+        entry_var = tk.StringVar()
+        entry_display = tk.Label(
+            entry_frame,
+            textvariable=entry_var,
             font=('Arial', 14),
             width=25,
+            height=2,
             bg='#2a2a2a',
             fg='white',
-            insertbackground='white'
+            relief=tk.SUNKEN,
+            anchor='w',
+            padx=10
         )
-        entry.pack(pady=10)
-        entry.focus()
+        entry_display.pack()
 
         result_label = tk.Label(
-            popup,
+            search_page,
             text="",
             font=('Arial', 10),
             fg='yellow',
-            bg='#1a1a1a'
+            bg='black'
         )
         result_label.pack(pady=5)
 
+        # Virtuálna klávesnica
+        keyboard_frame = tk.Frame(search_page, bg='black')
+        keyboard_frame.pack(pady=10)
+
+        # Rozloženie klávesnice
+        keyboard_layout = [
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+            ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+        ]
+
+        def key_press(key):
+            current = entry_var.get()
+            if key == '⌫':
+                entry_var.set(current[:-1])
+            elif key == 'Space':
+                entry_var.set(current + ' ')
+            else:
+                entry_var.set(current + key.lower())
+
+        # Vytvor tlačidlá klávesnice
+        for row_idx, row in enumerate(keyboard_layout):
+            row_frame = tk.Frame(keyboard_frame, bg='black')
+            row_frame.pack()
+
+            for key in row:
+                btn_width = 4 if key != '⌫' else 5
+                btn = tk.Button(
+                    row_frame,
+                    text=key,
+                    font=('Arial', 10, 'bold'),
+                    width=btn_width,
+                    height=2,
+                    bg='#2a2a2a',
+                    fg='white',
+                    activebackground='#3a3a3a',
+                    relief=tk.RAISED,
+                    command=lambda k=key: key_press(k)
+                )
+                btn.pack(side=tk.LEFT, padx=2, pady=2)
+
+        # Space bar
+        space_frame = tk.Frame(keyboard_frame, bg='black')
+        space_frame.pack()
+
+        space_btn = tk.Button(
+            space_frame,
+            text='Space',
+            font=('Arial', 10, 'bold'),
+            width=30,
+            height=2,
+            bg='#2a2a2a',
+            fg='white',
+            activebackground='#3a3a3a',
+            relief=tk.RAISED,
+            command=lambda: key_press('Space')
+        )
+        space_btn.pack(pady=2)
+
         def search_city():
-            city_name = entry.get().strip()
+            city_name = entry_var.get().strip()
             if not city_name:
                 result_label.config(text="Please enter a city name", fg='red')
                 return
 
             result_label.config(text="Searching...", fg='yellow')
-            popup.update()
+            search_page.update()
 
             try:
-                # Použijeme Open-Meteo Geocoding API
                 url = "https://geocoding-api.open-meteo.com/v1/search"
                 params = {'name': city_name, 'count': 1,
                           'language': 'en', 'format': 'json'}
@@ -159,7 +220,6 @@ class WeatherApp:
                     self.LATITUDE = result['latitude']
                     self.LONGITUDE = result['longitude']
 
-                    # Formátuj názov mesta
                     city = result['name']
                     country = result.get('country', '')
                     self.CITY = f"{city}, {country}"
@@ -170,8 +230,7 @@ class WeatherApp:
                     self.city_label.config(text=self.CITY)
                     self.update_weather()
 
-                    popup.destroy()
-                    self.start_auto_rotate()
+                    close_search()
                 else:
                     result_label.config(
                         text="City not found. Try again.", fg='red')
@@ -179,13 +238,14 @@ class WeatherApp:
                 print(f"Error searching city: {e}")
                 result_label.config(text="Search failed. Try again.", fg='red')
 
-        def cancel():
-            popup.destroy()
+        def close_search():
+            search_page.pack_forget()
+            self.show_page(self.current_page)
             self.start_auto_rotate()
 
-        # Tlačidlá
-        btn_frame = tk.Frame(popup, bg='#1a1a1a')
-        btn_frame.pack(pady=15)
+        # Tlačidlá Search a Cancel
+        btn_frame = tk.Frame(search_page, bg='black')
+        btn_frame.pack(pady=10)
 
         search_btn = tk.Button(
             btn_frame,
@@ -193,8 +253,9 @@ class WeatherApp:
             font=('Arial', 12, 'bold'),
             bg='#2a7a2a',
             fg='white',
-            command=search_city,
-            width=10
+            width=12,
+            height=2,
+            command=search_city
         )
         search_btn.pack(side=tk.LEFT, padx=10)
 
@@ -204,18 +265,21 @@ class WeatherApp:
             font=('Arial', 12, 'bold'),
             bg='#7a2a2a',
             fg='white',
-            command=cancel,
-            width=10
+            width=12,
+            height=2,
+            command=close_search
         )
         cancel_btn.pack(side=tk.LEFT, padx=10)
 
-        # Enter pre vyhľadanie
-        entry.bind('<Return>', lambda e: search_city())
+        # Skry aktuálnu stránku a zobraz search
+        for page in self.pages:
+            page.pack_forget()
+        search_page.pack(fill=tk.BOTH, expand=True)
 
     def start_auto_rotate(self):
         """Spusti automatické prepínanie stránok"""
         if self.auto_rotate_enabled:
-            self.stop_auto_rotate()  # Zruš predchádzajúci timer
+            self.stop_auto_rotate()
             self.auto_rotate_timer = self.root.after(
                 self.auto_rotate_interval, self.auto_next_page)
 
@@ -229,7 +293,7 @@ class WeatherApp:
         """Automaticky prejde na ďalšiu stránku v loope"""
         next_page = (self.current_page + 1) % len(self.pages)
         self.show_page(next_page)
-        self.start_auto_rotate()  # Naplánuj ďalšie prepnutie
+        self.start_auto_rotate()
 
     def create_pages(self):
         # Stránka 1: Aktuálne počasie
@@ -593,18 +657,34 @@ class WeatherApp:
         self.root.after(1000, self.update_current_time)
 
     def get_weather_icon(self, weather_code):
-        """Vráti emoji ikonu podľa WMO weather code"""
+        """Vráti textovú ikonu podľa WMO weather code"""
         icons = {
-            0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
-            45: "🌫️", 48: "🌫️",
-            51: "🌦️", 53: "🌦️", 55: "🌧️",
-            61: "🌧️", 63: "🌧️", 65: "🌧️",
-            71: "🌨️", 73: "🌨️", 75: "❄️", 77: "🌨️",
-            80: "🌦️", 81: "🌧️", 82: "⛈️",
-            85: "🌨️", 86: "❄️",
-            95: "⛈️", 96: "⛈️", 99: "⛈️"
+            0: "☀",   # Clear sky (slnko)
+            1: "🌤",   # Mainly clear
+            2: "⛅",   # Partly cloudy
+            3: "☁",   # Overcast (oblačno)
+            45: "≡",  # Foggy (hmla)
+            48: "≡",  # Rime fog
+            51: "∴",  # Light drizzle (mrholenie)
+            53: "∴",  # Moderate drizzle
+            55: ":::",  # Dense drizzle
+            61: "🌧",   # Slight rain (dážď)
+            63: "🌧",   # Moderate rain
+            65: "🌧",   # Heavy rain
+            71: "❄",   # Slight snow (sneh)
+            73: "❄",   # Moderate snow
+            75: "❄❄",  # Heavy snow
+            77: "❄",   # Snow grains
+            80: "∴",  # Slight rain showers
+            81: ":::",  # Moderate rain showers
+            82: "⚡",  # Violent rain showers
+            85: "❄",   # Slight snow showers
+            86: "❄❄",  # Heavy snow showers
+            95: "⚡",  # Thunderstorm (búrka)
+            96: "⚡❄",  # Thunderstorm with hail
+            99: "⚡⚡"   # Severe thunderstorm
         }
-        return icons.get(weather_code, "🌡️")
+        return icons.get(weather_code, "?")
 
     def get_weather_description(self, weather_code):
         """Prevedie WMO weather code na popis"""
